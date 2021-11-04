@@ -1,0 +1,16 @@
+{
+  "name": "TYPECHAIN",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "hss",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsc-watch --onSuccess \"node dist/index.js\""
+  },
+  "devDependencies": {
+    "tsc-watch": "^4.5.0"
+  },
+  "dependencies": {
+    "typescript": "^4.4.4"
+  }
+}
