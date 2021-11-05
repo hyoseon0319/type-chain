@@ -1,33 +1,111 @@
-// interface Human {
-//     name: string,
-//     age: number,
-//     gender: string
-// }
+import * as CryptoJS from "crypto-js"
 
-class Human {
-    public name: string;
-    public age: number;
-    public gender: string;
-    constructor(name: string, age: number, gender?: string) {
-        this.name = name;
-        this.age = age;
-        this.gender = gender;
+class Block {
+    static calculateBlockHash = (
+        index: number , 
+        previousHash: string, 
+        timestamp: number, 
+        data: string
+        
+    ) : string => 
+        CryptoJS.SHA256(index + previousHash + timestamp + data).toString();
+    
+    // static 을 사용하는 이유? 클래스가 생성되지 않아도 호출하기 위해
+    static validateStructure = (aBlock : Block) : boolean =>  
+        typeof aBlock.index === "number" && 
+        typeof aBlock.hash === "string" && 
+        typeof aBlock.previousHash === "string" &&
+        typeof aBlock.timestamp === "number" &&
+        typeof aBlock.data === "string";
+
+    public index: number;
+    public hash: string;
+    public previousHash: string;
+    public data: string;
+    public timestamp: number;
+
+    constructor(
+      index: number,
+      hash: string,
+      previousHash: string,
+      data: string,
+      timestamp: number
+    ) {
+      this.index = index;
+      this.hash = hash;
+      this.previousHash = previousHash;
+      this.data = data;
+      this.timestamp = timestamp;
     }
-}
+  }
 
-const lynn = new Human("Lynn", 18, "female");
+const genesisBlock:Block = new Block(0, "202020202020", "", "Hello", 123456); 
+let blockchain: Block[] = [genesisBlock]; //  블록체인이랑 블록들이 배열로 연결된 형태
 
-const person = {
-    name: "hhs",
-    age: 26,
-    gender: "female"
-}
+const getBlockchain = () : Block[] => blockchain; // Block 반환
 
-const sayHi = (person: Human): string => {
-    return `Hello, ${person.name}, you are ${person.age}, you are a ${person.gender}`;
+const getLatestBlock = () : Block => blockchain[blockchain.length - 1]; // 가장 최근의 블록 반환
+
+const getNewTimeStamp = () : number => Math.round(new Date().getTime() / 1000); // timestamp 속성을 새로 지정해주기 위한 함수
+
+const createNewBlock = (data: string): Block => {
+    const previousBlock : Block = getLatestBlock(); // 가장 최근의 블록
+    const newIndex : number = previousBlock.index + 1; 
+    const newTimestamp : number = getNewTimeStamp(); 
+    const newHash : string = Block.calculateBlockHash( // static 으로 선언했던 calculateBlockHash로 새로운 hash 생성
+        newIndex, 
+        previousBlock.hash,
+        newTimestamp,
+        data
+    );
+    const newBlock : Block = new Block(
+        newIndex, 
+        newHash, 
+        previousBlock.hash, 
+        data, 
+        newTimestamp
+    );
+    addBlock(newBlock);
+    return newBlock;
 };
 
-console.log(sayHi(person));
-console.log(sayHi(lynn));
+const getHashforBlock = (aBlock: Block): string =>
+    Block.calculateBlockHash(
+        aBlock.index,
+        aBlock.previousHash,
+        aBlock.timestamp,
+        aBlock.data
+    );
+
+
+// 블록체인의 기반 -  블록들이 자신의 전 블록으로의 링크가 있음
+const isBlockValid = (
+    candidateBlock : Block, 
+    previousBlock : Block
+) : boolean => {
+    if (!Block.validateStructure(candidateBlock)) {
+        return false;
+    } else if (previousBlock.index + 1 !== candidateBlock.index) {
+        return false;
+    } else if (previousBlock.hash !== candidateBlock.previousHash) {
+        return false;
+    } else if (getHashforBlock(candidateBlock) !== candidateBlock.hash) {
+        return false;
+    } else {
+        return true;
+    }
+};
+
+const addBlock = (candidateBlock: Block): void => {
+    if (isBlockValid(candidateBlock, getLatestBlock())) {
+        blockchain.push(candidateBlock);
+    }
+};
+
+createNewBlock("second block");
+createNewBlock("third block");
+createNewBlock("fourth block");
+
+console.log(blockchain);
 
 export {};
